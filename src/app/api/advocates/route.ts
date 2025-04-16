@@ -1,6 +1,6 @@
 import db from "../../../db";
 import { advocates, specialties, advocateSpecialties, locations } from "../../../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, asc } from "drizzle-orm";
 import { NextRequest } from "next/server";
 import { 
   getPaginationParams, 
@@ -9,6 +9,11 @@ import {
   decodeCursor,
   encodeCursor
 } from "../../../utils/pagination";
+import {
+  getSortParams,
+  getSortExpressionsWithCaseInsensitive,
+  ALLOWED_ADVOCATE_SORT_FIELDS
+} from "../../../utils/sorting";
 
 /**
  * GET /api/advocates
@@ -20,11 +25,21 @@ import {
  * - cursor: Cursor for cursor-based pagination
  * - cursorField: Field to use for cursor-based pagination (default: id)
  * 
+ * Supports sorting with the following query parameters:
+ * - sort: Field to sort by (default: createdAt)
+ *   Allowed values: firstName, lastName, degree, yearsOfExperience, createdAt, updatedAt
+ * - order: Sort direction (default: desc)
+ *   Allowed values: asc, desc
+ * - secondarySort: Secondary field to sort by (optional)
+ * - secondaryOrder: Secondary sort direction (default: asc)
+ * 
  * Example usage:
  * - /api/advocates?page=1&limit=10 (Get first page with 10 items)
  * - /api/advocates?page=2&limit=25 (Get second page with 25 items)
  * - /api/advocates?cursor=<cursor_value> (Get next page using cursor)
- * - /api/advocates?cursor=<cursor_value>&cursorField=createdAt (Use createdAt field for cursor)
+ * - /api/advocates?sort=lastName&order=asc (Sort by last name ascending)
+ * - /api/advocates?sort=yearsOfExperience&order=desc&secondarySort=lastName&secondaryOrder=asc 
+ *   (Sort by years of experience descending, then by last name ascending)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -36,9 +51,29 @@ export async function GET(request: NextRequest) {
     // Log pagination parameters for debugging
 
     
+    // Get sort parameters from request
+    const sortParams = getSortParams(request);
+    
+    // Get the text fields that should use case-insensitive sorting
+    const textFields = ['firstName', 'lastName', 'degree'];
+    
+    // Generate sort expressions with case-insensitive sorting for text fields
+    const sortExpressions = getSortExpressionsWithCaseInsensitive(
+      advocates, 
+      sortParams,
+      textFields
+    );
+    
     // For simplicity, we'll fetch all advocates and apply pagination in memory
     // In a production environment, we would apply pagination at the database level
-    const allAdvocates = await db.select().from(advocates);
+    const query = db.select().from(advocates);
+    
+    // Apply sorting if we have sort expressions
+    const sortedQuery = sortExpressions.length > 0
+      ? query.orderBy(...sortExpressions)
+      : query;
+    
+    const allAdvocates = await sortedQuery;
     
     // Get total count from the fetched data
     const totalCount = allAdvocates.length;
@@ -52,7 +87,7 @@ export async function GET(request: NextRequest) {
       
       if (cursorData) {
         // Find the index of the item with the cursor ID
-        const cursorItemIndex = allAdvocates.findIndex(advocate => 
+        const cursorItemIndex = allAdvocates.findIndex((advocate: any) => 
           advocate.id === cursorData.value);
         
 
@@ -214,7 +249,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Link', linkHeader);
     
     // Add ETag for caching
-    const etag = `W/"${totalCount}-${page}-${limit}"`;
+    const etag = `W/"${totalCount}-${page}-${limit}-${sortParams.field}-${sortParams.direction}"`;
     response.headers.set('ETag', etag);
     
     return response;

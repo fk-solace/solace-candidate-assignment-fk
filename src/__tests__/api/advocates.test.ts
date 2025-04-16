@@ -1,15 +1,20 @@
 /**
- * Simplified pagination tests for the advocates API
+ * Simplified pagination and sorting tests for the advocates API
  * 
- * These tests focus on the pagination functionality without relying on Next.js-specific components
+ * These tests focus on the pagination and sorting functionality without relying on Next.js-specific components
  */
 
-// Mock pagination utilities
+// Mock pagination and sorting utilities
 const mockPaginationUtils = {
   getPaginationParams: jest.fn(),
   getLinkHeader: jest.fn(),
   encodeCursor: jest.fn(),
   decodeCursor: jest.fn()
+};
+
+const mockSortingUtils = {
+  getSortParams: jest.fn(),
+  getSortExpressionsWithCaseInsensitive: jest.fn()
 };
 
 // Mock response data
@@ -69,7 +74,7 @@ const mockAdvocates = [
   }
 ];
 
-describe('Pagination for Advocates API', () => {
+describe('Advocates API', () => {
   describe('Pagination parameters', () => {
     it('should handle default pagination parameters', () => {
       const params = createMockRequestParams({});
@@ -164,6 +169,52 @@ describe('Pagination for Advocates API', () => {
         expect(response.pagination.pageSize).toBe(limit);
         expect(response.pagination.totalPages).toBe(Math.ceil(mockAdvocates.length / limit));
       });
+    });
+  });
+  
+  describe('Sorting parameters', () => {
+    it('should handle default sorting parameters', () => {
+      const params = createMockRequestParams({});
+      const response = createMockResponse(params);
+      
+      // Default sorting should be by createdAt in descending order
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle sorting by firstName in ascending order', () => {
+      const params = createMockRequestParams({
+        sort: 'firstName',
+        order: 'asc'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle sorting with secondary sort field', () => {
+      const params = createMockRequestParams({
+        sort: 'yearsOfExperience',
+        order: 'desc',
+        secondarySort: 'lastName',
+        secondaryOrder: 'asc'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle case-insensitive sorting for text fields', () => {
+      const params = createMockRequestParams({
+        sort: 'lastName',
+        order: 'asc'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
     });
   });
 });
