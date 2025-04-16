@@ -37,8 +37,8 @@ export function Pagination({
   } = pagination;
   
   return (
-    <div className="pagination" style={{ marginTop: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+    <div className="pagination py-4 px-4 bg-white border-t border-gray-100 -mt-px">
+      <div className="flex items-center justify-end gap-6">
         {/* Page info */}
         <PageInfo
           currentPage={currentPage}
@@ -46,6 +46,19 @@ export function Pagination({
           totalCount={totalCount}
           pageSize={pageSize}
         />
+        
+        {/* Pagination controls */}
+        <div className="flex items-center">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            onPageChange={onPageChange}
+            useCursorPagination={useCursorPagination}
+            onCursorChange={onCursorChange}
+          />
+        </div>
         
         {/* Page size selector */}
         {showPageSizeSelector && onPageSizeChange && (
@@ -55,19 +68,6 @@ export function Pagination({
             onPageSizeChange={onPageSizeChange}
           />
         )}
-      </div>
-      
-      {/* Pagination controls */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          hasNextPage={hasNextPage}
-          hasPreviousPage={hasPreviousPage}
-          onPageChange={onPageChange}
-          useCursorPagination={useCursorPagination}
-          onCursorChange={onCursorChange}
-        />
       </div>
     </div>
   );

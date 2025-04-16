@@ -14,11 +14,10 @@ export function PageInfo({ currentPage, totalPages, totalCount, pageSize }: Page
   const end = Math.min(currentPage * pageSize, totalCount);
 
   return (
-    <div className="page-info" style={{ fontSize: '0.9rem', color: '#666' }}>
-      <p>
-        Showing {totalCount > 0 ? `${start}-${end} of ${totalCount}` : '0'} items
-        {totalPages > 0 && ` • Page ${currentPage} of ${totalPages}`}
-      </p>
+    <div className="page-info">
+      <div className="text-base text-gray-500">
+        {totalCount > 0 ? `${start}-${end} of ${totalCount}` : '0'} results
+      </div>
     </div>
   );
 }

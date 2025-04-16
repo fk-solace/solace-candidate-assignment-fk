@@ -105,55 +105,72 @@ export class AdvocateService {
     pagination?: PaginationParams
   ): Promise<{ data: Advocate[], pagination: PaginationMeta }> {
     try {
-      // First try to get all advocates
-      const allAdvocates = await this.getAdvocates(pagination);
-      
-      if (!allAdvocates || !allAdvocates.data) {
-        throw new Error('Failed to fetch advocates data');
+      // If query is empty, just return all advocates
+      if (!query || query.trim() === '') {
+        return this.getAdvocates(pagination);
       }
+
+      // Create an array to store all search promises
+      const searchPromises = [];
       
-      // Perform client-side filtering for more reliable results
-      const searchLower = query.toLowerCase();
+      // Search by first name with contains (supported operation)
+      const firstNameParams: Record<string, any> = { ...pagination };
+      firstNameParams['firstName[contains]'] = query;
+      searchPromises.push(
+        this.apiClient.get<AdvocateResponse>(
+          this.baseEndpoint,
+          firstNameParams
+        )
+      );
       
-      // Prepare search query - extract numbers for phone search
-      const numericQuery = query.replace(/[^0-9]/g, '');
-      const hasNumericQuery = numericQuery.length > 0;
+      // Search by last name with contains (supported operation)
+      const lastNameParams: Record<string, any> = { ...pagination };
+      lastNameParams['lastName[contains]'] = query;
+      searchPromises.push(
+        this.apiClient.get<AdvocateResponse>(
+          this.baseEndpoint,
+          lastNameParams
+        )
+      );
       
-      // Filter the advocates based on the search query
-      const filteredData = allAdvocates.data.filter(advocate => {
-        // Phone number search (only if query contains numbers)
-        if (hasNumericQuery && String(advocate.phoneNumber).includes(numericQuery)) {
-          return true;
-        }
-        
-        return (
-          // Name fields
-          `${advocate.firstName} ${advocate.lastName}`.toLowerCase().includes(searchLower) ||
-          advocate.firstName.toLowerCase().includes(searchLower) ||
-          advocate.lastName.toLowerCase().includes(searchLower) ||
-          // Professional fields
-          advocate.degree.toLowerCase().includes(searchLower) ||
-          // Location fields
-          advocate.city.toLowerCase().includes(searchLower) ||
-          (advocate.state && advocate.state.toLowerCase().includes(searchLower)) ||
-          advocate.country.toLowerCase().includes(searchLower) ||
-          // Specialty fields (search within array)
-          advocate.specialties.some(specialty => 
-            specialty.toLowerCase().includes(searchLower)
+      // Try to search by phone number (if query is numeric)
+      if (/^\d+$/.test(query)) {
+        const phoneParams: Record<string, any> = { ...pagination };
+        phoneParams['phoneNumber'] = parseInt(query, 10); // Phone is likely a number
+        searchPromises.push(
+          this.apiClient.get<AdvocateResponse>(
+            this.baseEndpoint,
+            phoneParams
           )
         );
+      }
+      
+      // Wait for all search requests to complete, handling any errors
+      const results = await Promise.allSettled(searchPromises);
+      
+      // Combine all successful results
+      const allAdvocates: Advocate[] = [];
+      
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value?.data?.data) {
+          allAdvocates.push(...result.value.data.data);
+        }
       });
       
-      // Create pagination metadata for the filtered results
-      const totalCount = filteredData.length;
+      // Remove duplicates by ID
+      const uniqueAdvocates = Array.from(
+        new Map(allAdvocates.map(advocate => [advocate.id, advocate])).values()
+      );
+      
+      // Apply pagination to the combined results
       const pageSize = pagination?.limit || 10;
       const currentPage = pagination?.page || 1;
+      const totalCount = uniqueAdvocates.length;
       const totalPages = Math.ceil(totalCount / pageSize);
       
-      // Paginate the filtered results
       const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = filteredData.slice(startIndex, endIndex);
+      const endIndex = Math.min(startIndex + pageSize, totalCount);
+      const paginatedData = uniqueAdvocates.slice(startIndex, endIndex);
       
       return {
         data: paginatedData,

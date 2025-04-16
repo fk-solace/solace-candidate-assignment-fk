@@ -8,7 +8,7 @@ import { AdvocatePage } from "../components/advocates";
  */
 export default function Home() {
   return (
-    <main style={{ margin: "24px" }}>
+    <main>
       <AdvocatePage />
     </main>
   );

@@ -1,0 +1,310 @@
+/**
+ * Main stylesheet for the Solace Advocates application
+ */
+
+/* Import design tokens and utilities */
+@import url('./tokens.css');
+@import url('./utilities.css');
+
+/* Import Lato font from Google Fonts with preconnect for performance */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;700&display=swap');
+
+/* Ensure Lato font is applied */
+html, body, button, input, select, textarea {
+  font-family: 'Lato', sans-serif;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-gray-800);
+  background-color: var(--color-white);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-4);
+}
+
+h1 {
+  font-size: var(--font-size-3xl);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+}
+
+h4 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  margin-bottom: var(--spacing-4);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast) ease-in-out;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+button, .button {
+  display: inline-block;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast) ease-in-out;
+}
+
+.button-primary {
+  color: var(--color-white);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.button-primary:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.button-secondary {
+  color: var(--color-white);
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+.button-secondary:hover {
+  background-color: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+}
+
+.button-outline {
+  color: var(--color-primary);
+  background-color: transparent;
+  border-color: var(--color-primary);
+}
+
+.button-outline:hover {
+  color: var(--color-white);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+input, select, textarea {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-gray-800);
+  background-color: var(--color-white);
+  background-clip: padding-box;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-md);
+  transition: border-color var(--transition-fast) ease-in-out, box-shadow var(--transition-fast) ease-in-out;
+}
+
+input:focus, select:focus, textarea:focus {
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  border-color: var(--color-primary-light);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(42, 99, 86, 0.25);
+}
+
+table {
+  width: 100%;
+  color: var(--color-gray-800);
+  border-collapse: collapse;
+}
+
+th {
+  padding: var(--spacing-3);
+  vertical-align: bottom;
+  text-align: left;
+  border-bottom: 2px solid var(--color-gray-300);
+  font-weight: var(--font-weight-semibold);
+}
+
+td {
+  padding: var(--spacing-3);
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+/* Solace Advocates specific styles */
+.advocate-page {
+  padding: var(--spacing-6) 0;
+}
+
+.advocate-page h1 {
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-6);
+  text-align: center;
+}
+
+.search-container {
+  margin-bottom: var(--spacing-6);
+}
+
+.list-container {
+  margin-bottom: var(--spacing-8);
+}
+
+.advocate-table th {
+  background-color: var(--color-gray-50);
+}
+
+.advocate-table tr:hover {
+  background-color: var(--color-gray-50);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+}
+
+/* Loading and error states */
+.loading-state {
+  text-align: center;
+  padding: var(--spacing-8);
+  color: var(--color-gray-600);
+}
+
+.error-state {
+  text-align: center;
+  padding: var(--spacing-8);
+  color: var(--color-danger);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-8);
+  color: var(--color-gray-600);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px; /* Slightly smaller base font size on mobile */
+  }
+  
+  .container {
+    padding-left: var(--spacing-3);
+    padding-right: var(--spacing-3);
+  }
+  
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  
+  h2 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .advocate-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: var(--font-size-sm);
+  }
+  
+  .advocate-table th,
+  .advocate-table td {
+    padding: var(--spacing-2);
+    white-space: nowrap;
+  }
+  
+  /* Stack elements vertically on mobile */
+  .mobile-stack {
+    flex-direction: column;
+  }
+  
+  .mobile-stack > * {
+    width: 100%;
+    margin-bottom: var(--spacing-3);
+  }
+  
+  .mobile-stack > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Adjust search component for mobile */
+  .search-controls {
+    flex-direction: column;
+  }
+  
+  .search-controls > * {
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .search-controls > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Adjust pagination for mobile */
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-2);
+  }
+  
+  /* Hide less important columns on small screens */
+  .hide-on-mobile {
+    display: none;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  html {
+    font-size: 12px;
+  }
+  
+  .container {
+    padding-left: var(--spacing-2);
+    padding-right: var(--spacing-2);
+  }
+  
+  /* Further simplify the table on very small screens */
+  .advocate-table th,
+  .advocate-table td {
+    padding: var(--spacing-1);
+    font-size: var(--font-size-xs);
+  }
+}

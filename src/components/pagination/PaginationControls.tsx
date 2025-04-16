@@ -67,27 +67,7 @@ export function PaginationControls({
   
   const pageNumbers = getPageNumbers();
   
-  // Common button styles
-  const buttonStyle = {
-    padding: '4px 8px',
-    margin: '0 4px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-    background: 'white',
-    cursor: 'pointer',
-    minWidth: '32px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  };
-  
-  // Active page button styles
-  const activeButtonStyle = {
-    ...buttonStyle,
-    background: '#f0f0f0',
-    borderColor: '#999',
-    fontWeight: 'bold'
-  };
+  // We'll use CSS classes instead of inline styles
   
   // Handle navigation based on pagination type
   const handlePrevious = () => {
@@ -107,77 +87,44 @@ export function PaginationControls({
   };
   
   return (
-    <div className="pagination-controls" style={{ display: 'flex', alignItems: 'center' }}>
-      {/* First page button - only show for page-based pagination */}
-      {!useCursorPagination && (
-        <button
-          onClick={() => onPageChange(1)}
-          disabled={!hasPreviousPage}
-          style={buttonStyle}
-          aria-label="Go to first page"
-          title="First page"
-        >
-          &laquo;
-        </button>
-      )}
-      
-      {/* Previous page/cursor button */}
-      <button
-        onClick={handlePrevious}
-        disabled={!hasPreviousPage}
-        style={buttonStyle}
-        aria-label="Go to previous page"
-        title="Previous page"
-      >
-        &lsaquo;
-      </button>
-      
-      {/* Page number buttons - only show for page-based pagination */}
-      {!useCursorPagination && pageNumbers.map((page, index) => {
-        if (page === '...') {
-          return (
-            <span key={`ellipsis-${index}`} style={{ margin: '0 4px' }} aria-hidden="true">
-              &hellip;
-            </span>
-          );
-        }
+    <nav aria-label="Pagination" className="pagination-controls">
+      <div className="inline-flex items-center">
+        {/* Page info for cursor pagination */}
+        {useCursorPagination && (
+          <div className="mr-2 text-sm text-gray-500">
+            {currentPage} / {totalPages}
+          </div>
+        )}
         
-        return (
-          <button
-            key={`page-${page}`}
-            onClick={() => onPageChange(page as number)}
-            style={currentPage === page ? activeButtonStyle : buttonStyle}
-            aria-label={`Go to page ${page}`}
-            aria-current={currentPage === page ? 'page' : undefined}
-          >
-            {page}
-          </button>
-        );
-      })}
-      
-      {/* Next page/cursor button */}
-      <button
-        onClick={handleNext}
-        disabled={!hasNextPage}
-        style={buttonStyle}
-        aria-label="Go to next page"
-        title="Next page"
-      >
-        &rsaquo;
-      </button>
-      
-      {/* Last page button - only show for page-based pagination */}
-      {!useCursorPagination && (
+        {/* Previous button */}
         <button
-          onClick={() => onPageChange(totalPages)}
-          disabled={!hasNextPage}
-          style={buttonStyle}
-          aria-label="Go to last page"
-          title="Last page"
+          onClick={handlePrevious}
+          disabled={!hasPreviousPage}
+          className={`flex items-center justify-center w-10 h-10 rounded text-xl ${hasPreviousPage ? 'text-primary hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
+          aria-label="Previous page"
         >
-          &raquo;
+          ←
         </button>
-      )}
-    </div>
+        
+        {/* Page dropdown or display */}
+        {!useCursorPagination && (
+          <div className="inline-flex items-center mx-2">
+            <span className="text-base text-gray-600 font-medium whitespace-nowrap">
+              {currentPage} / {totalPages}
+            </span>
+          </div>
+        )}
+        
+        {/* Next button */}
+        <button
+          onClick={handleNext}
+          disabled={!hasNextPage}
+          className={`flex items-center justify-center w-10 h-10 rounded text-xl ${hasNextPage ? 'text-primary hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
+          aria-label="Next page"
+        >
+          →
+        </button>
+      </div>
+    </nav>
   );
 }

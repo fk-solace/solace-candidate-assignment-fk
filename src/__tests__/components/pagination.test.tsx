@@ -30,8 +30,10 @@ describe('PageInfo', () => {
       />
     );
     
-    expect(screen.getByText(/Showing.*11-20 of 100.*items/)).toBeInTheDocument();
-    expect(screen.getByText(/Page 2 of 10/)).toBeInTheDocument();
+    // Check that the pagination info shows the correct range and total
+    // We need to use a regex to match the text that might include whitespace
+    expect(screen.getByText(/11-20 of 100/)).toBeInTheDocument();
+    expect(screen.getByText(/results/)).toBeInTheDocument();
   });
   
   it('handles empty data correctly', () => {
@@ -44,7 +46,24 @@ describe('PageInfo', () => {
       />
     );
     
-    expect(screen.getByText('Showing 0 items')).toBeInTheDocument();
+    // Check that the component shows "0 results" when there's no data
+    expect(screen.getByText('0 results')).toBeInTheDocument();
+  });
+  
+  it('calculates correct range for partial page', () => {
+    render(
+      <PageInfo
+        currentPage={3}
+        totalPages={3}
+        totalCount={25}
+        pageSize={10}
+      />
+    );
+    
+    // For the last page with only 5 items (21-25 of 25)
+    // We need to use a regex to match the text that might include whitespace
+    expect(screen.getByText(/21-25 of 25/)).toBeInTheDocument();
+    expect(screen.getByText(/results/)).toBeInTheDocument();
   });
 });
 
@@ -58,9 +77,21 @@ describe('PageSizeSelector', () => {
       />
     );
     
-    expect(screen.getByText('Items per page:')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getAllByRole('option').length).toBe(3);
+    // Check that the component shows the correct text
+    expect(screen.getByText('Show')).toBeInTheDocument();
+    expect(screen.getByText('per page')).toBeInTheDocument();
+    
+    // Check that the dropdown is rendered with the correct options
+    const dropdown = screen.getByRole('combobox');
+    expect(dropdown).toBeInTheDocument();
+    expect(dropdown).toHaveValue('10');
+    
+    // Check that all options are rendered
+    const options = screen.getAllByRole('option');
+    expect(options).toHaveLength(3);
+    expect(options[0]).toHaveValue('10');
+    expect(options[1]).toHaveValue('25');
+    expect(options[2]).toHaveValue('50');
   });
   
   it('calls onPageSizeChange when selection changes', () => {
@@ -89,19 +120,15 @@ describe('PaginationControls', () => {
       />
     );
     
-    // First, previous, next, and last buttons
-    expect(screen.getByTitle('First page')).toBeInTheDocument();
-    expect(screen.getByTitle('Previous page')).toBeInTheDocument();
-    expect(screen.getByTitle('Next page')).toBeInTheDocument();
-    expect(screen.getByTitle('Last page')).toBeInTheDocument();
+    // Check that the navigation buttons are present
+    expect(screen.getByLabelText('Previous page')).toBeInTheDocument();
+    expect(screen.getByLabelText('Next page')).toBeInTheDocument();
     
-    // Page numbers
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    // Check that the page numbers are displayed in the correct format
+    expect(screen.getByText('2 / 10')).toBeInTheDocument();
   });
   
-  it('disables buttons appropriately when on first page', () => {
+  it('disables previous button when on first page', () => {
     render(
       <PaginationControls
         currentPage={1}
@@ -112,13 +139,12 @@ describe('PaginationControls', () => {
       />
     );
     
-    expect(screen.getByTitle('First page')).toBeDisabled();
-    expect(screen.getByTitle('Previous page')).toBeDisabled();
-    expect(screen.getByTitle('Next page')).not.toBeDisabled();
-    expect(screen.getByTitle('Last page')).not.toBeDisabled();
+    // Check that the previous button is disabled but the next button is not
+    expect(screen.getByLabelText('Previous page')).toBeDisabled();
+    expect(screen.getByLabelText('Next page')).not.toBeDisabled();
   });
   
-  it('disables buttons appropriately when on last page', () => {
+  it('disables next button when on last page', () => {
     render(
       <PaginationControls
         currentPage={10}
@@ -129,10 +155,9 @@ describe('PaginationControls', () => {
       />
     );
     
-    expect(screen.getByTitle('First page')).not.toBeDisabled();
-    expect(screen.getByTitle('Previous page')).not.toBeDisabled();
-    expect(screen.getByTitle('Next page')).toBeDisabled();
-    expect(screen.getByTitle('Last page')).toBeDisabled();
+    // Check that the next button is disabled but the previous button is not
+    expect(screen.getByLabelText('Previous page')).not.toBeDisabled();
+    expect(screen.getByLabelText('Next page')).toBeDisabled();
   });
   
   it('calls onPageChange with correct page number when buttons are clicked', () => {
@@ -146,23 +171,38 @@ describe('PaginationControls', () => {
       />
     );
     
-    fireEvent.click(screen.getByTitle('First page'));
-    expect(mockOnPageChange).toHaveBeenCalledWith(1);
-    
-    fireEvent.click(screen.getByTitle('Previous page'));
+    // Click the previous button and check that onPageChange is called with the correct page number
+    fireEvent.click(screen.getByLabelText('Previous page'));
     expect(mockOnPageChange).toHaveBeenCalledWith(4);
     
-    fireEvent.click(screen.getByTitle('Next page'));
-    expect(mockOnPageChange).toHaveBeenCalledWith(6);
-    
-    fireEvent.click(screen.getByTitle('Last page'));
-    expect(mockOnPageChange).toHaveBeenCalledWith(10);
-    
-    // Since our test is rendering with currentPage=5, we need to click on a page number that's visible
-    // Let's click on page 6 which should be visible in the pagination controls
-    fireEvent.click(screen.getByRole('button', { name: 'Go to page 6' }));
+    // Click the next button and check that onPageChange is called with the correct page number
+    fireEvent.click(screen.getByLabelText('Next page'));
     expect(mockOnPageChange).toHaveBeenCalledWith(6);
   });
+  
+  it('supports cursor-based pagination', () => {
+    const mockOnCursorChange = jest.fn();
+    
+    render(
+      <PaginationControls
+        currentPage={2}
+        totalPages={5}
+        hasNextPage={true}
+        hasPreviousPage={true}
+        onPageChange={mockOnPageChange}
+        useCursorPagination={true}
+        onCursorChange={mockOnCursorChange}
+      />
+    );
+    
+    // Click the previous button and check that onCursorChange is called with 'prev'
+    fireEvent.click(screen.getByLabelText('Previous page'));
+    expect(mockOnCursorChange).toHaveBeenCalledWith('prev');
+    
+    // Click the next button and check that onCursorChange is called with 'next'
+    fireEvent.click(screen.getByLabelText('Next page'));
+    expect(mockOnCursorChange).toHaveBeenCalledWith('next');
+  });  
 });
 
 describe('Pagination', () => {
@@ -177,17 +217,41 @@ describe('Pagination', () => {
       />
     );
     
-    // Page info
-    expect(screen.getByText(/Showing.*11-20 of 100.*items/)).toBeInTheDocument();
+    // Check that the PageInfo component is rendered correctly
+    expect(screen.getByText(/11-20 of 100/)).toBeInTheDocument();
+    expect(screen.getByText(/results/)).toBeInTheDocument();
     
-    // Page size selector
-    expect(screen.getByText('Items per page:')).toBeInTheDocument();
+    // Check that the PageSizeSelector component is rendered correctly
+    expect(screen.getByText('Show')).toBeInTheDocument();
+    expect(screen.getByText('per page')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
     
-    // Pagination controls
-    expect(screen.getByTitle('First page')).toBeInTheDocument();
-    expect(screen.getByTitle('Previous page')).toBeInTheDocument();
-    expect(screen.getByTitle('Next page')).toBeInTheDocument();
-    expect(screen.getByTitle('Last page')).toBeInTheDocument();
+    // Check that the PaginationControls component is rendered correctly
+    expect(screen.getByLabelText('Previous page')).toBeInTheDocument();
+    expect(screen.getByLabelText('Next page')).toBeInTheDocument();
+    expect(screen.getByText('2 / 10')).toBeInTheDocument();
+  });
+  
+  it('renders correctly with cursor-based pagination', () => {
+    const mockOnCursorChange = jest.fn();
+    
+    render(
+      <Pagination
+        pagination={mockPagination}
+        onPageChange={mockOnPageChange}
+        onCursorChange={mockOnCursorChange}
+        useCursorPagination={true}
+        showPageSizeSelector={true}
+      />
+    );
+    
+    // Check that the cursor-based pagination controls are rendered
+    expect(screen.getByLabelText('Previous page')).toBeInTheDocument();
+    expect(screen.getByLabelText('Next page')).toBeInTheDocument();
+    
+    // Click the previous button and check that onCursorChange is called
+    fireEvent.click(screen.getByLabelText('Previous page'));
+    expect(mockOnCursorChange).toHaveBeenCalledWith('prev');
   });
   
   it('does not render page size selector when showPageSizeSelector is false', () => {

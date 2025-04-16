@@ -333,7 +333,25 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
     // Clean up the timer on component unmount or when search term changes
     return () => clearTimeout(debounceTimer);
   }, [advocates, searchTerm, syncWithUrl, router, searchParams]);
-  
+
+  // Custom setSearchTerm function that also resets to the first page
+  const handleSearchTermChange = useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset to first page when search term changes
+    
+    if (syncWithUrl) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (term) {
+        params.set('search', term);
+      } else {
+        params.delete('search');
+      }
+      params.set('page', '1'); // Reset page parameter to 1
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
+  }, [router, searchParams, syncWithUrl]);
+
+  // Return the hook result
   return {
     advocates,
     filteredAdvocates,
@@ -341,7 +359,7 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
     isLoading,
     error,
     searchTerm,
-    setSearchTerm,
+    setSearchTerm: handleSearchTermChange,
     resetSearch,
     handlePageChange,
     handlePageSizeChange,
