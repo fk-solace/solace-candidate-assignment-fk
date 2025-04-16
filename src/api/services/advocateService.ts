@@ -57,6 +57,31 @@ export class AdvocateService {
   }
 
   /**
+   * Get advocates using cursor-based pagination
+   * @param cursor Cursor for pagination
+   * @param direction Direction for cursor-based pagination
+   * @param limit Number of items per page
+   * @param sorting Sorting parameters
+   * @param filters Array of filter objects
+   * @returns Promise resolving to advocate data and pagination metadata
+   */
+  async getAdvocatesByCursor(
+    cursor?: string,
+    direction: 'next' | 'prev' = 'next',
+    limit: number = 10,
+    sorting?: SortParams,
+    filters?: Filter[]
+  ): Promise<{ data: Advocate[], pagination: PaginationMeta }> {
+    const pagination: PaginationParams = {
+      cursor,
+      direction,
+      limit
+    };
+    
+    return this.getAdvocates(pagination, sorting, filters);
+  }
+
+  /**
    * Get a single advocate by ID
    * @param id Advocate ID
    * @returns Promise resolving to advocate data

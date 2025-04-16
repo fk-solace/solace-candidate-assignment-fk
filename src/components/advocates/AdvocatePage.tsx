@@ -5,6 +5,7 @@ import { AdvocatePageProps } from './types';
 import { AdvocateSearch } from './AdvocateSearch';
 import { AdvocateList } from './AdvocateList';
 import { useAdvocates } from '../../hooks/useAdvocates';
+import { Pagination } from '../pagination';
 
 /**
  * Main page component for advocates that combines search and list components
@@ -15,12 +16,24 @@ export function AdvocatePage({ initialData }: AdvocatePageProps) {
   // Use our custom hook to manage advocates data and search functionality
   const {
     filteredAdvocates,
+    pagination,
     isLoading,
     error,
     searchTerm,
     setSearchTerm,
-    resetSearch
-  } = useAdvocates();
+    resetSearch,
+    handlePageChange,
+    handlePageSizeChange,
+    handleCursorNavigation,
+    useCursorPagination,
+    handleSortChange,
+    sortParams
+  } = useAdvocates({
+    initialPage: 1,
+    initialPageSize: 10,
+    useCursorPagination: false, // Set to true to enable cursor-based pagination
+    syncWithUrl: true // Sync pagination state with URL parameters
+  });
 
   return (
     <div className="advocate-page">
@@ -42,6 +55,19 @@ export function AdvocatePage({ initialData }: AdvocatePageProps) {
           isLoading={isLoading}
           error={error}
         />
+        
+        {/* Pagination component */}
+        {pagination && !isLoading && !error && filteredAdvocates.length > 0 && (
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onCursorChange={handleCursorNavigation}
+            pageSizes={[10, 25, 50]}
+            showPageSizeSelector={true}
+            useCursorPagination={useCursorPagination}
+          />
+        )}
       </div>
     </div>
   );
