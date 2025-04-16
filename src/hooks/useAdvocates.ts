@@ -221,11 +221,28 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
    * Handle sort change
    */
   const handleSortChange = useCallback((field: string, direction?: 'asc' | 'desc') => {
+    // Update sort params state
     setSortParams({
       sort: field as any,
       order: direction || 'asc'
     });
-  }, []);
+    
+    // Immediately update URL if sync is enabled
+    if (syncWithUrl) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('sort', field);
+      params.set('order', direction || 'asc');
+      
+      // Keep other params intact
+      if (!useCursorPagination) {
+        params.set('page', currentPage.toString());
+      }
+      params.set('limit', pageSize.toString());
+      
+      // Update URL without refreshing the page
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
+  }, [router, searchParams, syncWithUrl, useCursorPagination, currentPage, pageSize]);
   
   /**
    * Reset search

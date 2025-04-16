@@ -9,7 +9,14 @@ import { AdvocateTable } from './AdvocateTable';
  * @param props Component props
  * @returns List component with advocate data
  */
-export function AdvocateList({ advocates, isLoading, error }: AdvocateListProps) {
+export function AdvocateList({ 
+  advocates, 
+  isLoading, 
+  error,
+  sortField,
+  sortDirection,
+  onSortChange 
+}: AdvocateListProps) {
   // Render loading state
   if (isLoading) {
     return <div className="loading-state">Loading advocates...</div>;
@@ -28,7 +35,12 @@ export function AdvocateList({ advocates, isLoading, error }: AdvocateListProps)
   // Render advocates table
   return (
     <div className="advocate-list">
-      <AdvocateTable advocates={advocates} />
+      <AdvocateTable 
+        advocates={advocates} 
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSortChange={onSortChange}
+      />
     </div>
   );
 }
