@@ -299,12 +299,6 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
       const searchLower = searchTerm.toLowerCase();
       
       const filtered = advocates.filter(advocate => {
-        // Convert phone number to string for searching
-        const phoneStr = advocate.phoneNumber.toString();
-        
-        // Remove non-numeric characters from search query for phone number comparison
-        const numericSearch = searchLower.replace(/\D/g, '');
-        
         // Search across multiple fields for better results
         return (
           // Name fields
@@ -322,9 +316,7 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
             specialty.toLowerCase().includes(searchLower)
           ) ||
           // Phone number search
-          phoneStr.includes(numericSearch) ||
-          // Also try to match partial phone numbers (if at least 3 digits)
-          (numericSearch.length >= 3 && phoneStr.includes(numericSearch))
+          String(advocate.phoneNumber).includes(searchLower.replace(/[^0-9]/g, ''))
         );
       });
       

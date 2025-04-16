@@ -47,8 +47,8 @@ describe('AdvocateSearch', () => {
       />
     );
     
-    expect(screen.getByPlaceholderText(/search by name, phone, degree, location, or specialty/i)).toBeInTheDocument();
-    expect(screen.getByText('Reset')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search advocates...')).toBeInTheDocument();
+    expect(screen.getByText('Reset Search')).toBeInTheDocument();
     expect(screen.getByText('Searching for:')).toBeInTheDocument();
     expect(screen.getByText('test')).toBeInTheDocument();
   });

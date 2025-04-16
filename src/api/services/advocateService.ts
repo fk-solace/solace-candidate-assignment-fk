@@ -115,13 +115,16 @@ export class AdvocateService {
       // Perform client-side filtering for more reliable results
       const searchLower = query.toLowerCase();
       
+      // Prepare search query - extract numbers for phone search
+      const numericQuery = query.replace(/[^0-9]/g, '');
+      const hasNumericQuery = numericQuery.length > 0;
+      
       // Filter the advocates based on the search query
       const filteredData = allAdvocates.data.filter(advocate => {
-        // Convert phone number to string for searching
-        const phoneStr = advocate.phoneNumber.toString();
-        
-        // Remove non-numeric characters from search query for phone number comparison
-        const numericSearch = searchLower.replace(/\D/g, '');
+        // Phone number search (only if query contains numbers)
+        if (hasNumericQuery && String(advocate.phoneNumber).includes(numericQuery)) {
+          return true;
+        }
         
         return (
           // Name fields
@@ -137,11 +140,7 @@ export class AdvocateService {
           // Specialty fields (search within array)
           advocate.specialties.some(specialty => 
             specialty.toLowerCase().includes(searchLower)
-          ) ||
-          // Phone number search (both formatted and numeric)
-          phoneStr.includes(numericSearch) ||
-          // Also try to match partial phone numbers
-          (numericSearch.length >= 3 && phoneStr.includes(numericSearch))
+          )
         );
       });
       
