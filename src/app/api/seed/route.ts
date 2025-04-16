@@ -1,9 +1,29 @@
 import db from "../../../db";
-import { advocates } from "../../../db/schema";
-import { advocateData } from "../../../db/seed/advocates";
+import { seedDatabase } from "../../../db/seed/advocates";
 
 export async function POST() {
-  const records = await db.insert(advocates).values(advocateData).returning();
-
-  return Response.json({ advocates: records });
+  try {
+    const result = await seedDatabase();
+    
+    return Response.json({
+      success: true,
+      data: {
+        advocates: result.advocates.length,
+        specialties: result.specialties.length,
+        locations: result.locations.length,
+        relationships: result.advocateSpecialties.length,
+      },
+      message: "Database seeded successfully",
+    });
+  } catch (error) {
+    console.error("Error in seed API route:", error);
+    return Response.json(
+      {
+        success: false,
+        error: "Failed to seed database",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }
