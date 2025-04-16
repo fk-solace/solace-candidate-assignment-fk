@@ -1,7 +1,10 @@
 import db from "..";
-import { advocates } from "../schema";
+import { advocates, specialties, advocateSpecialties, locations } from "../schema";
 
-const specialties = [
+/**
+ * List of all available specialties
+ */
+const specialtiesList = [
   "Bipolar",
   "LGBTQ",
   "Medication/Prescribing",
@@ -30,149 +33,249 @@ const specialties = [
   "Domestic abuse",
 ];
 
-const randomSpecialty = () => {
+/**
+ * Helper function to get random specialties for each advocate
+ * @returns Array of specialty indices
+ */
+const getRandomSpecialtyIndices = () => {
   const random1 = Math.floor(Math.random() * 24);
   const random2 = Math.floor(Math.random() * (24 - random1)) + random1 + 1;
 
   return [random1, random2];
 };
 
-const advocateData = [
+/**
+ * Base advocate data without specialties
+ */
+const advocateBaseData = [
   {
     firstName: "John",
     lastName: "Doe",
-    city: "New York",
     degree: "MD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 10,
     phoneNumber: 5551234567,
+    city: "New York",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Jane",
     lastName: "Smith",
-    city: "Los Angeles",
     degree: "PhD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 8,
     phoneNumber: 5559876543,
+    city: "Los Angeles",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Alice",
     lastName: "Johnson",
-    city: "Chicago",
     degree: "MSW",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 5,
     phoneNumber: 5554567890,
+    city: "Chicago",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Michael",
     lastName: "Brown",
-    city: "Houston",
     degree: "MD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 12,
     phoneNumber: 5556543210,
+    city: "Houston",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Emily",
     lastName: "Davis",
-    city: "Phoenix",
     degree: "PhD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 7,
     phoneNumber: 5553210987,
+    city: "Phoenix",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Chris",
     lastName: "Martinez",
-    city: "Philadelphia",
     degree: "MSW",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 9,
     phoneNumber: 5557890123,
+    city: "Philadelphia",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Jessica",
     lastName: "Taylor",
-    city: "San Antonio",
     degree: "MD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 11,
     phoneNumber: 5554561234,
+    city: "San Antonio",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "David",
     lastName: "Harris",
-    city: "San Diego",
     degree: "PhD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 6,
     phoneNumber: 5557896543,
+    city: "San Diego",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Laura",
     lastName: "Clark",
-    city: "Dallas",
     degree: "MSW",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 4,
     phoneNumber: 5550123456,
+    city: "Dallas",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Daniel",
     lastName: "Lewis",
-    city: "San Jose",
     degree: "MD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 13,
     phoneNumber: 5553217654,
+    city: "San Jose",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Sarah",
     lastName: "Lee",
-    city: "Austin",
     degree: "PhD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 10,
     phoneNumber: 5551238765,
+    city: "Austin",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "James",
     lastName: "King",
-    city: "Jacksonville",
     degree: "MSW",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 5,
     phoneNumber: 5556540987,
+    city: "Jacksonville",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Megan",
     lastName: "Green",
-    city: "San Francisco",
     degree: "MD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 14,
     phoneNumber: 5559873456,
+    city: "San Francisco",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Joshua",
     lastName: "Walker",
-    city: "Columbus",
     degree: "PhD",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 9,
     phoneNumber: 5556781234,
+    city: "Columbus",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
   {
     firstName: "Amanda",
     lastName: "Hall",
-    city: "Fort Worth",
     degree: "MSW",
-    specialties: specialties.slice(...randomSpecialty()),
     yearsOfExperience: 3,
     phoneNumber: 5559872345,
+    city: "Fort Worth",
+    specialties: specialtiesList.slice(...getRandomSpecialtyIndices()),
   },
 ];
 
-export { advocateData };
+/**
+ * Function to seed the database with normalized data
+ */
+async function seedDatabase() {
+  try {
+    // 1. Insert specialties
+    const insertedSpecialties = await db
+      .insert(specialties)
+      .values(specialtiesList.map(name => ({ name })))
+      .returning();
+    
+    console.log(`Inserted ${insertedSpecialties.length} specialties`);
+    
+    // Create a map of specialty names to their IDs for easy lookup
+    const specialtyMap = new Map();
+    insertedSpecialties.forEach(specialty => {
+      specialtyMap.set(specialty.name, specialty.id);
+    });
+    
+    // 2. Insert advocates
+    const advocateValues = advocateBaseData.map(advocate => ({
+      firstName: advocate.firstName,
+      lastName: advocate.lastName,
+      degree: advocate.degree,
+      yearsOfExperience: advocate.yearsOfExperience,
+      phoneNumber: advocate.phoneNumber,
+    }));
+    
+    const insertedAdvocates = await db
+      .insert(advocates)
+      .values(advocateValues)
+      .returning();
+    
+    console.log(`Inserted ${insertedAdvocates.length} advocates`);
+    
+    // 3. Insert locations
+    const locationsData = advocateBaseData.map((advocate, index) => ({
+      advocateId: insertedAdvocates[index].id,
+      city: advocate.city,
+      state: "",  // Could be expanded with real state data
+      country: "United States",
+    }));
+    
+    const insertedLocations = await db
+      .insert(locations)
+      .values(locationsData)
+      .returning();
+    
+    console.log(`Inserted ${insertedLocations.length} locations`);
+    
+    // 4. Create advocate-specialty relationships using the original specialties
+    const advocateSpecialtiesData = [];
+    
+    // For each advocate, use their assigned specialties from the data
+    for (let i = 0; i < advocateBaseData.length; i++) {
+      const advocate = advocateBaseData[i];
+      const advocateId = insertedAdvocates[i].id;
+      
+      // For each specialty in the advocate's specialties array, create a relationship
+      for (const specialtyName of advocate.specialties) {
+        // Find the specialty ID from our map
+        const specialtyId = specialtyMap.get(specialtyName);
+        
+        if (specialtyId) {
+          advocateSpecialtiesData.push({
+            advocateId,
+            specialtyId,
+          });
+        } else {
+          console.warn(`Specialty "${specialtyName}" not found in database`);
+        }
+      }
+    }
+    
+    const insertedAdvocateSpecialties = await db
+      .insert(advocateSpecialties)
+      .values(advocateSpecialtiesData)
+      .returning();
+    
+    console.log(`Created ${insertedAdvocateSpecialties.length} advocate-specialty relationships`);
+    
+    return {
+      advocates: insertedAdvocates,
+      specialties: insertedSpecialties,
+      locations: insertedLocations,
+      advocateSpecialties: insertedAdvocateSpecialties,
+    };
+  } catch (error) {
+    console.error("Error seeding database:", error);
+    throw error;
+  }
+}
+
+export { seedDatabase };
