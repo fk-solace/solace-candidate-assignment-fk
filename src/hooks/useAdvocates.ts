@@ -170,20 +170,43 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
         );
       }
       
-      setAdvocates(result.data);
-      setFilteredAdvocates(result.data);
-      setPagination(result.pagination);
+      // Verify that we have valid data before updating state
+      if (result && Array.isArray(result.data)) {
+        setAdvocates(result.data);
+        setFilteredAdvocates(result.data);
+        
+        if (result.pagination) {
+          setPagination(result.pagination);
+          
+          // Update cursor if available
+          if (result.pagination.nextCursor) {
+            setCursor(result.pagination.nextCursor);
+          }
+        }
+        
+        // Update URL params
+        updateUrl();
+      } else {
+        console.error('Invalid response format:', result);
+        setError('Received invalid data format from the server.');
+      }
+    } catch (error: any) {
+      console.error('Error fetching advocates:', error);
       
-      // Update cursor if available
-      if (result.pagination.nextCursor) {
-        setCursor(result.pagination.nextCursor);
+      // Provide more specific error messages based on the error type
+      if (error.status === 404) {
+        setError('The requested resource was not found.');
+      } else if (error.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.message) {
+        setError(`Error: ${error.message}`);
+      } else {
+        setError('Failed to fetch advocates. Please try again later.');
       }
       
-      // Update URL params
-      updateUrl();
-    } catch (error) {
-      console.error('Error fetching advocates:', error);
-      setError('Failed to fetch advocates. Please try again later.');
+      // Set empty data to prevent displaying stale data
+      setAdvocates([]);
+      setFilteredAdvocates([]);
     } finally {
       setIsLoading(false);
     }
@@ -263,25 +286,61 @@ export function useAdvocates(options: UseAdvocatesOptions = {}): UseAdvocatesRes
     fetchAdvocates();
   }, [fetchAdvocates]);
   
-  // Filter advocates when search term changes
+  // Debounce search term changes to improve performance
   useEffect(() => {
+    // Skip if search term is empty
     if (searchTerm.trim() === '') {
       setFilteredAdvocates(advocates);
       return;
     }
     
-    const filtered = advocates.filter(advocate => {
-      const fullName = `${advocate.firstName} ${advocate.lastName}`.toLowerCase();
+    // Set a debounce timer to avoid filtering on every keystroke
+    const debounceTimer = setTimeout(() => {
       const searchLower = searchTerm.toLowerCase();
       
-      return (
-        fullName.includes(searchLower) ||
-        advocate.degree.toLowerCase().includes(searchLower)
-      );
-    });
+      const filtered = advocates.filter(advocate => {
+        // Convert phone number to string for searching
+        const phoneStr = advocate.phoneNumber.toString();
+        
+        // Remove non-numeric characters from search query for phone number comparison
+        const numericSearch = searchLower.replace(/\D/g, '');
+        
+        // Search across multiple fields for better results
+        return (
+          // Name fields
+          `${advocate.firstName} ${advocate.lastName}`.toLowerCase().includes(searchLower) ||
+          advocate.firstName.toLowerCase().includes(searchLower) ||
+          advocate.lastName.toLowerCase().includes(searchLower) ||
+          // Professional fields
+          advocate.degree.toLowerCase().includes(searchLower) ||
+          // Location fields
+          advocate.city.toLowerCase().includes(searchLower) ||
+          (advocate.state && advocate.state.toLowerCase().includes(searchLower)) ||
+          advocate.country.toLowerCase().includes(searchLower) ||
+          // Specialty fields (search within array)
+          advocate.specialties.some(specialty => 
+            specialty.toLowerCase().includes(searchLower)
+          ) ||
+          // Phone number search
+          phoneStr.includes(numericSearch) ||
+          // Also try to match partial phone numbers (if at least 3 digits)
+          (numericSearch.length >= 3 && phoneStr.includes(numericSearch))
+        );
+      });
+      
+      setFilteredAdvocates(filtered);
+      
+      // Update URL with search term if URL sync is enabled
+      if (syncWithUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('search', searchTerm);
+        router.push(`?${params.toString()}`, { scroll: false });
+      }
+    }, 300); // 300ms debounce delay
     
-    setFilteredAdvocates(filtered);
-  }, [advocates, searchTerm]);
+    // Clean up the timer on component unmount or when search term changes
+    return () => clearTimeout(debounceTimer);
+  }, [advocates, searchTerm, syncWithUrl, router, searchParams]);
   
   return {
     advocates,

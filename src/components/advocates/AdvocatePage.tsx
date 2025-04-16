@@ -40,11 +40,12 @@ export function AdvocatePage({ initialData }: AdvocatePageProps) {
       <h1>Solace Advocates</h1>
       
       {/* Search component */}
-      <div className="search-container" style={{ marginBottom: '24px' }}>
+      <div className="search-container">
         <AdvocateSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onReset={resetSearch}
+          resultCount={filteredAdvocates.length}
         />
       </div>
       

@@ -13,6 +13,8 @@ export interface AdvocateSearchProps {
   onSearchChange: (searchTerm: string) => void;
   /** Callback when reset button is clicked */
   onReset: () => void;
+  /** Number of search results (optional) */
+  resultCount?: number;
 }
 
 /**
