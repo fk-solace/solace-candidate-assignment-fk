@@ -95,7 +95,7 @@ export class AdvocateService {
   }
 
   /**
-   * Search advocates by text query
+   * Search advocates by query string
    * @param query Search query
    * @param pagination Pagination parameters
    * @returns Promise resolving to advocate data and pagination metadata
@@ -104,36 +104,72 @@ export class AdvocateService {
     query: string,
     pagination?: PaginationParams
   ): Promise<{ data: Advocate[], pagination: PaginationMeta }> {
-    // Create filters for searching by name, degree, and specialties
-    const filters: Filter[] = [
-      {
-        field: 'firstName',
-        operation: 'contains',
-        value: query
-      },
-      {
-        field: 'lastName',
-        operation: 'contains',
-        value: query
-      },
-      {
-        field: 'degree',
-        operation: 'contains',
-        value: query
-      },
-      {
-        field: 'specialty',
-        operation: 'any',
-        value: [query]
-      },
-      {
-        field: 'city',
-        operation: 'contains',
-        value: query
+    try {
+      // First try to get all advocates
+      const allAdvocates = await this.getAdvocates(pagination);
+      
+      if (!allAdvocates || !allAdvocates.data) {
+        throw new Error('Failed to fetch advocates data');
       }
-    ];
-    
-    return this.getAdvocates(pagination, undefined, filters);
+      
+      // Perform client-side filtering for more reliable results
+      const searchLower = query.toLowerCase();
+      
+      // Prepare search query - extract numbers for phone search
+      const numericQuery = query.replace(/[^0-9]/g, '');
+      const hasNumericQuery = numericQuery.length > 0;
+      
+      // Filter the advocates based on the search query
+      const filteredData = allAdvocates.data.filter(advocate => {
+        // Phone number search (only if query contains numbers)
+        if (hasNumericQuery && String(advocate.phoneNumber).includes(numericQuery)) {
+          return true;
+        }
+        
+        return (
+          // Name fields
+          `${advocate.firstName} ${advocate.lastName}`.toLowerCase().includes(searchLower) ||
+          advocate.firstName.toLowerCase().includes(searchLower) ||
+          advocate.lastName.toLowerCase().includes(searchLower) ||
+          // Professional fields
+          advocate.degree.toLowerCase().includes(searchLower) ||
+          // Location fields
+          advocate.city.toLowerCase().includes(searchLower) ||
+          (advocate.state && advocate.state.toLowerCase().includes(searchLower)) ||
+          advocate.country.toLowerCase().includes(searchLower) ||
+          // Specialty fields (search within array)
+          advocate.specialties.some(specialty => 
+            specialty.toLowerCase().includes(searchLower)
+          )
+        );
+      });
+      
+      // Create pagination metadata for the filtered results
+      const totalCount = filteredData.length;
+      const pageSize = pagination?.limit || 10;
+      const currentPage = pagination?.page || 1;
+      const totalPages = Math.ceil(totalCount / pageSize);
+      
+      // Paginate the filtered results
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedData = filteredData.slice(startIndex, endIndex);
+      
+      return {
+        data: paginatedData,
+        pagination: {
+          totalCount,
+          pageSize,
+          currentPage,
+          totalPages,
+          hasNextPage: currentPage < totalPages,
+          hasPreviousPage: currentPage > 1
+        }
+      };
+    } catch (error) {
+      console.error('Error in searchAdvocates:', error);
+      throw error;
+    }
   }
 
   /**
