@@ -25,6 +25,12 @@ export interface AdvocateListProps {
   isLoading?: boolean;
   /** Error message if any */
   error?: string | null;
+  /** Current sort field */
+  sortField?: string;
+  /** Current sort direction */
+  sortDirection?: 'asc' | 'desc';
+  /** Callback when sort changes */
+  onSortChange?: (field: string, direction: 'asc' | 'desc') => void;
 }
 
 /**
@@ -33,6 +39,12 @@ export interface AdvocateListProps {
 export interface AdvocateTableProps {
   /** List of advocates to display */
   advocates: Advocate[];
+  /** Current sort field */
+  sortField?: string;
+  /** Current sort direction */
+  sortDirection?: 'asc' | 'desc';
+  /** Callback when sort changes */
+  onSortChange?: (field: string, direction: 'asc' | 'desc') => void;
 }
 
 /**

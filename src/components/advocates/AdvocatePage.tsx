@@ -54,6 +54,9 @@ export function AdvocatePage({ initialData }: AdvocatePageProps) {
           advocates={filteredAdvocates}
           isLoading={isLoading}
           error={error}
+          sortField={sortParams.sort}
+          sortDirection={sortParams.order}
+          onSortChange={handleSortChange}
         />
         
         {/* Pagination component */}
