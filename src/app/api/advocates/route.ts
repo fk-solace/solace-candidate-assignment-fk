@@ -1,15 +1,91 @@
 import db from "../../../db";
 import { advocates, specialties, advocateSpecialties, locations } from "../../../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { NextRequest } from "next/server";
+import { 
+  getPaginationParams, 
+  getLinkHeader,
+  DEFAULT_PAGE_SIZE,
+  decodeCursor,
+  encodeCursor
+} from "../../../utils/pagination";
 
 /**
  * GET /api/advocates
  * Retrieves a list of advocates with their specialties and location information
+ * 
+ * Supports pagination with the following query parameters:
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 10, allowed values: 10, 25, 50)
+ * - cursor: Cursor for cursor-based pagination
+ * - cursorField: Field to use for cursor-based pagination (default: id)
+ * 
+ * Example usage:
+ * - /api/advocates?page=1&limit=10 (Get first page with 10 items)
+ * - /api/advocates?page=2&limit=25 (Get second page with 25 items)
+ * - /api/advocates?cursor=<cursor_value> (Get next page using cursor)
+ * - /api/advocates?cursor=<cursor_value>&cursorField=createdAt (Use createdAt field for cursor)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // 1. Get all advocates
-    const advocatesList = await db.select().from(advocates);
+    // Get pagination parameters from request
+    const paginationParams = getPaginationParams(request);
+    // Ensure we're using the limit from the request parameters
+    const { page = 1, limit = DEFAULT_PAGE_SIZE, cursor } = paginationParams;
+    
+    // Log pagination parameters for debugging
+
+    
+    // For simplicity, we'll fetch all advocates and apply pagination in memory
+    // In a production environment, we would apply pagination at the database level
+    const allAdvocates = await db.select().from(advocates);
+    
+    // Get total count from the fetched data
+    const totalCount = allAdvocates.length;
+    
+    let advocatesList;
+    
+    if (cursor) {
+      // Cursor-based pagination
+      const cursorData = decodeCursor(cursor);
+
+      
+      if (cursorData) {
+        // Find the index of the item with the cursor ID
+        const cursorItemIndex = allAdvocates.findIndex(advocate => 
+          advocate.id === cursorData.value);
+        
+
+        
+        if (cursorItemIndex !== -1) {
+          // If cursor direction is forward, get items after the cursor
+          // If cursor direction is backward, get items before the cursor
+          if (cursorData.direction === 'forward') {
+            advocatesList = allAdvocates.slice(cursorItemIndex + 1, cursorItemIndex + 1 + limit);
+
+          } else {
+            // For backward pagination, get the previous page
+            const startIndex = Math.max(0, cursorItemIndex - limit);
+            advocatesList = allAdvocates.slice(startIndex, cursorItemIndex);
+
+          }
+        } else {
+          // Cursor item not found, fall back to first page
+          advocatesList = allAdvocates.slice(0, limit);
+
+        }
+      } else {
+        // Invalid cursor, fall back to first page
+        advocatesList = allAdvocates.slice(0, limit);
+
+      }
+    } else {
+      // Offset-based pagination
+      const offset = (page - 1) * limit;
+      const end = offset + limit;
+
+      advocatesList = allAdvocates.slice(offset, end);
+    }
     
     // Create a map to store the complete advocate data
     const advocatesMap = new Map();
@@ -40,16 +116,30 @@ export async function GET() {
       }
     }
     
-    // 3. Get all advocate-specialty relationships
-    const advocateSpecialtiesList = await db
-      .select()
-      .from(advocateSpecialties)
-      .leftJoin(specialties, eq(advocateSpecialties.specialtyId, specialties.id));
+    // 3. Get all advocate-specialty relationships with specialties
+    // We'll use a simpler approach to avoid TypeScript errors
+    const advocateSpecialtiesRaw = await db.select().from(advocateSpecialties);
+    const specialtiesList = await db.select().from(specialties);
+    
+    // Create a map of specialties by ID for easy lookup
+    const specialtiesMap = new Map();
+    for (const specialty of specialtiesList) {
+      specialtiesMap.set(specialty.id, specialty);
+    }
+    
+    // Combine the data manually
+    const advocateSpecialtiesList = advocateSpecialtiesRaw.map(relation => ({
+      advocate_specialties: relation,
+      specialties: specialtiesMap.get(relation.specialtyId)
+    }));
     
     // Add specialty data to advocates
     for (const relation of advocateSpecialtiesList) {
-      const advocate = advocatesMap.get(relation.advocate_specialties.advocateId);
-      if (advocate && relation.specialties) {
+      if (!relation.advocate_specialties || !relation.specialties) continue;
+      
+      const advocateId = relation.advocate_specialties.advocateId;
+      const advocate = advocatesMap.get(advocateId);
+      if (advocate && relation.specialties.name) {
         advocate.specialties.push(relation.specialties.name);
       }
     }
@@ -58,43 +148,76 @@ export async function GET() {
     const data = Array.from(advocatesMap.values());
     
     // If no data is returned from the database (likely because DATABASE_URL is not set),
-    // return mock data for development purposes
+    // If no data is returned from the database, return an empty array
     if (data.length === 0) {
-      console.warn("No data returned from database, using mock data");
+      console.warn("No data returned from database");
+      
       return Response.json({ 
         success: true,
-        data: [
-          {
-            id: "1",
-            firstName: "John",
-            lastName: "Doe",
-            city: "New York",
-            degree: "MD",
-            specialties: ["Bipolar", "LGBTQ"],
-            yearsOfExperience: 10,
-            phoneNumber: 5551234567,
-          },
-          {
-            id: "2",
-            firstName: "Jane",
-            lastName: "Smith",
-            city: "Los Angeles",
-            degree: "PhD",
-            specialties: ["Trauma & PTSD", "Women's issues"],
-            yearsOfExperience: 8,
-            phoneNumber: 5559876543,
-          },
-        ],
-        count: 2,
-        isMockData: true
+        data: [],
+        pagination: {
+          totalCount: 0,
+          pageSize: paginationParams.limit || DEFAULT_PAGE_SIZE,
+          currentPage: paginationParams.page || 1,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        },
+
       });
     }
     
-    return Response.json({ 
+    // Generate pagination metadata
+    // For offset-based pagination, calculate if there are more pages
+    const hasNextPage = advocatesList.length < totalCount && 
+      (cursor ? true : (page - 1) * limit + advocatesList.length < totalCount);
+    const hasPreviousPage = cursor ? true : page > 1;
+    
+    // Generate cursors for next/prev pages
+    let nextCursor, prevCursor;
+    
+    if (advocatesList.length > 0) {
+      // For next cursor, use the last item's ID
+      if (hasNextPage) {
+        const lastItem = advocatesList[advocatesList.length - 1];
+        nextCursor = encodeCursor('id', lastItem.id, 'forward');
+      }
+      
+      // For previous cursor, use the first item's ID
+      if (hasPreviousPage) {
+        const firstItem = advocatesList[0];
+        prevCursor = encodeCursor('id', firstItem.id, 'backward');
+      }
+    }
+    
+    const paginationMeta = {
+      totalCount,
+      pageSize: limit,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      hasNextPage,
+      hasPreviousPage,
+      nextCursor,
+      prevCursor,
+      cursorField: 'id'
+    };
+    
+    // Create response with pagination headers
+    const response = Response.json({
       success: true,
       data,
-      count: data.length,
+      pagination: paginationMeta,
     });
+    
+    // Add Link header for navigation (RFC 5988)
+    const linkHeader = getLinkHeader(request, paginationMeta);
+    response.headers.set('Link', linkHeader);
+    
+    // Add ETag for caching
+    const etag = `W/"${totalCount}-${page}-${limit}"`;
+    response.headers.set('ETag', etag);
+    
+    return response;
   } catch (error) {
     console.error("Error fetching advocates:", error);
     return Response.json(

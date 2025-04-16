@@ -7,7 +7,7 @@ export default function Home() {
   const [filteredAdvocates, setFilteredAdvocates] = useState([]);
 
   useEffect(() => {
-    console.log("fetching advocates...");
+
     fetch("/api/advocates").then((response) => {
       response.json().then((jsonResponse) => {
         setAdvocates(jsonResponse.data);
@@ -21,7 +21,7 @@ export default function Home() {
 
     document.getElementById("search-term").innerHTML = searchTerm;
 
-    console.log("filtering advocates...");
+
     const filteredAdvocates = advocates.filter((advocate) => {
       return (
         advocate.firstName.includes(searchTerm) ||
@@ -37,7 +37,7 @@ export default function Home() {
   };
 
   const onClick = () => {
-    console.log(advocates);
+
     setFilteredAdvocates(advocates);
   };
 
