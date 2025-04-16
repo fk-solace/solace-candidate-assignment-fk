@@ -12,7 +12,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('Starting database migration...');
+
   
   // For migrations
   const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
@@ -21,7 +21,7 @@ async function main() {
   try {
     // This will run all pending migrations
     await migrate(db, { migrationsFolder: 'drizzle' });
-    console.log('Migration completed successfully');
+
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

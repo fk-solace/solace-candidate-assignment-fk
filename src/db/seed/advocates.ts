@@ -196,7 +196,7 @@ async function seedDatabase() {
       .values(specialtiesList.map(name => ({ name })))
       .returning();
     
-    console.log(`Inserted ${insertedSpecialties.length} specialties`);
+
     
     // Create a map of specialty names to their IDs for easy lookup
     const specialtyMap = new Map();
@@ -218,7 +218,7 @@ async function seedDatabase() {
       .values(advocateValues)
       .returning();
     
-    console.log(`Inserted ${insertedAdvocates.length} advocates`);
+
     
     // 3. Insert locations
     const locationsData = advocateBaseData.map((advocate, index) => ({
@@ -233,7 +233,7 @@ async function seedDatabase() {
       .values(locationsData)
       .returning();
     
-    console.log(`Inserted ${insertedLocations.length} locations`);
+
     
     // 4. Create advocate-specialty relationships using the original specialties
     const advocateSpecialtiesData = [];
@@ -264,7 +264,7 @@ async function seedDatabase() {
       .values(advocateSpecialtiesData)
       .returning();
     
-    console.log(`Created ${insertedAdvocateSpecialties.length} advocate-specialty relationships`);
+
     
     return {
       advocates: insertedAdvocates,
