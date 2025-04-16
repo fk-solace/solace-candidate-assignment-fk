@@ -1,6 +1,6 @@
 import db from "../../../db";
 import { advocates, specialties, advocateSpecialties, locations } from "../../../db/schema";
-import { eq, sql, desc, asc } from "drizzle-orm";
+import { eq, sql, desc, asc, and } from "drizzle-orm";
 import { NextRequest } from "next/server";
 import { 
   getPaginationParams, 
@@ -14,6 +14,10 @@ import {
   getSortExpressionsWithCaseInsensitive,
   ALLOWED_ADVOCATE_SORT_FIELDS
 } from "../../../utils/sorting";
+import {
+  getFilterParams,
+  buildFilterConditions
+} from "../../../utils/filtering";
 
 /**
  * GET /api/advocates
@@ -33,6 +37,28 @@ import {
  * - secondarySort: Secondary field to sort by (optional)
  * - secondaryOrder: Secondary sort direction (default: asc)
  * 
+ * Supports filtering with the following query parameters:
+ * - Basic equality: field=value (e.g., firstName=John)
+ * - Text search: field[operation]=value
+ *   - firstName[contains]=John (Case-insensitive contains)
+ *   - lastName[startsWith]=Sm (Case-insensitive starts with)
+ *   - lastName[endsWith]=th (Case-insensitive ends with)
+ * - Exact match: field[operation]=value
+ *   - degree[eq]=MD (Exact match)
+ *   - degree[in]=MD,PhD (Match any in list)
+ * - Range filters: field[operation]=value
+ *   - experience[gt]=5 (Greater than)
+ *   - experience[gte]=5 (Greater than or equal)
+ *   - experience[lt]=10 (Less than)
+ *   - experience[lte]=10 (Less than or equal)
+ *   - experience[between]=5,10 (Between range, inclusive)
+ * - Array filters: field[operation]=value
+ *   - specialty[any]=Trauma,Anxiety (Has any of these specialties)
+ *   - specialty[all]=Trauma,Anxiety (Has all of these specialties)
+ * - Location filters:
+ *   - city[contains]=New (Cities containing "New")
+ *   - city[eq]=New York (Exact city match)
+ * 
  * Example usage:
  * - /api/advocates?page=1&limit=10 (Get first page with 10 items)
  * - /api/advocates?page=2&limit=25 (Get second page with 25 items)
@@ -40,6 +66,8 @@ import {
  * - /api/advocates?sort=lastName&order=asc (Sort by last name ascending)
  * - /api/advocates?sort=yearsOfExperience&order=desc&secondarySort=lastName&secondaryOrder=asc 
  *   (Sort by years of experience descending, then by last name ascending)
+ * - /api/advocates?firstName[contains]=John&experience[gte]=5 (Filter by name containing "John" and 5+ years experience)
+ * - /api/advocates?specialty[any]=Trauma,Anxiety&city=New York (Filter by specialties and city)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -54,6 +82,9 @@ export async function GET(request: NextRequest) {
     // Get sort parameters from request
     const sortParams = getSortParams(request);
     
+    // Get filter parameters from request
+    const filterParams = getFilterParams(request);
+    
     // Get the text fields that should use case-insensitive sorting
     const textFields = ['firstName', 'lastName', 'degree'];
     
@@ -64,14 +95,24 @@ export async function GET(request: NextRequest) {
       textFields
     );
     
-    // For simplicity, we'll fetch all advocates and apply pagination in memory
-    // In a production environment, we would apply pagination at the database level
-    const query = db.select().from(advocates);
+    // Build filter conditions
+    const filterConditions = buildFilterConditions(
+      { advocates, specialties, advocateSpecialties, locations },
+      filterParams
+    );
+    
+    // Start building the query
+    const baseQuery = db.select().from(advocates);
+    
+    // Apply filters if we have any
+    const filteredQuery = filterConditions.length > 0
+      ? baseQuery.where(and(...filterConditions))
+      : baseQuery;
     
     // Apply sorting if we have sort expressions
     const sortedQuery = sortExpressions.length > 0
-      ? query.orderBy(...sortExpressions)
-      : query;
+      ? filteredQuery.orderBy(...sortExpressions)
+      : filteredQuery;
     
     const allAdvocates = await sortedQuery;
     
@@ -249,7 +290,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Link', linkHeader);
     
     // Add ETag for caching
-    const etag = `W/"${totalCount}-${page}-${limit}-${sortParams.field}-${sortParams.direction}"`;
+    const etag = `W/"${totalCount}-${page}-${limit}-${sortParams.field}-${sortParams.direction}-${filterParams.length}"`;
     response.headers.set('ETag', etag);
     
     return response;

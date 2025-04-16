@@ -1,10 +1,10 @@
 /**
- * Simplified pagination and sorting tests for the advocates API
+ * Simplified pagination, sorting, and filtering tests for the advocates API
  * 
- * These tests focus on the pagination and sorting functionality without relying on Next.js-specific components
+ * These tests focus on the pagination, sorting, and filtering functionality without relying on Next.js-specific components
  */
 
-// Mock pagination and sorting utilities
+// Mock pagination, sorting, and filtering utilities
 const mockPaginationUtils = {
   getPaginationParams: jest.fn(),
   getLinkHeader: jest.fn(),
@@ -15,6 +15,11 @@ const mockPaginationUtils = {
 const mockSortingUtils = {
   getSortParams: jest.fn(),
   getSortExpressionsWithCaseInsensitive: jest.fn()
+};
+
+const mockFilteringUtils = {
+  getFilterParams: jest.fn(),
+  buildFilterConditions: jest.fn()
 };
 
 // Mock response data
@@ -210,6 +215,73 @@ describe('Advocates API', () => {
       const params = createMockRequestParams({
         sort: 'lastName',
         order: 'asc'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+  });
+  
+  describe('Filtering parameters', () => {
+    it('should handle basic equality filters', () => {
+      const params = createMockRequestParams({
+        firstName: 'John',
+        lastName: 'Doe'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle text search filters', () => {
+      const params = createMockRequestParams({
+        'firstName[contains]': 'Jo'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle range filters', () => {
+      const params = createMockRequestParams({
+        'experience[gte]': 5,
+        'experience[lte]': 10
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle specialty filters', () => {
+      const params = createMockRequestParams({
+        'specialty[any]': 'Trauma,Anxiety'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle location filters', () => {
+      const params = createMockRequestParams({
+        'city[contains]': 'New'
+      });
+      const response = createMockResponse(params);
+      
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+    });
+    
+    it('should handle multiple filters of different types', () => {
+      const params = createMockRequestParams({
+        'firstName[contains]': 'Jo',
+        'experience[gte]': 5,
+        'specialty[any]': 'Trauma,Anxiety',
+        'city': 'New York'
       });
       const response = createMockResponse(params);
       
