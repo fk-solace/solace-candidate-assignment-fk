@@ -3,12 +3,17 @@
  */
 
 /**
- * Pagination parameters
+ * Pagination parameters for API requests
  */
 export interface PaginationParams {
+  /** Page number (1-based) */
   page?: number;
+  /** Number of items per page */
   limit?: number;
+  /** Cursor for pagination (used for cursor-based pagination) */
   cursor?: string;
+  /** Direction for cursor-based pagination */
+  direction?: 'next' | 'prev';
   cursorField?: string;
 }
 

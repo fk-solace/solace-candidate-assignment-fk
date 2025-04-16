@@ -50,6 +50,8 @@ export interface PaginationMeta {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  nextCursor?: string;
+  prevCursor?: string;
 }
 
 /**
