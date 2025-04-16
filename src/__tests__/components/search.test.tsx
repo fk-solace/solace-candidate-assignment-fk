@@ -21,7 +21,7 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    expect(screen.getByPlaceholderText(/search by name, degree, location, or specialty/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/search by name, phone, degree, location, or specialty/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument();
   });
   
@@ -47,7 +47,7 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText(/search by name, degree, location, or specialty/i);
+    const input = screen.getByPlaceholderText(/search by name, phone, degree, location, or specialty/i);
     fireEvent.change(input, { target: { value: 'test search' } });
     
     expect(mockOnSearchChange).toHaveBeenCalledWith('test search');
@@ -77,7 +77,7 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText(/search by name, degree, location, or specialty/i);
+    const input = screen.getByPlaceholderText(/search by name, phone, degree, location, or specialty/i);
     fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
     
     expect(mockOnReset).toHaveBeenCalled();

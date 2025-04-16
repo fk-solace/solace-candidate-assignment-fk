@@ -63,23 +63,17 @@ describe('useAdvocates hook', () => {
     });
   });
 
-  it('should initialize with default values', async () => {
-    // Arrange
-    const { result, rerender } = renderHook(() => useAdvocates());
+  it('should have default initial values', () => {
+    // Arrange & Act
+    const { result } = renderHook(() => useAdvocates());
     
-    // Initial state should have default values
+    // Assert - check initial state values
     expect(result.current.isLoading).toBe(true);
     expect(result.current.error).toBeNull();
-    
-    // Act - wait for the initial fetch to complete
-    await act(async () => {
-      // Force re-render to update state
-      rerender();
-    });
-    
-    // Assert - after fetch, should have data
-    expect(advocateService.getAdvocates).toHaveBeenCalled();
-  }, 10000);
+    expect(result.current.advocates).toEqual([]);
+    expect(result.current.sortParams.sort).toBe('createdAt');
+    expect(result.current.sortParams.order).toBe('desc');
+  });
 
   it('should handle sort changes and update URL', async () => {
     // Arrange
