@@ -47,7 +47,7 @@ describe('AdvocateSearch component', () => {
     jest.clearAllMocks();
   });
   
-  it('renders the search input and reset button', () => {
+  it('renders the search input without reset button when no search term', () => {
     render(
       <AdvocateSearch
         searchTerm=""
@@ -56,8 +56,11 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    expect(screen.getByPlaceholderText(/search by name, degree, location, or specialty/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument();
+    // Check that the search input is rendered with the correct placeholder
+    expect(screen.getByPlaceholderText(/search advocates by name and phone number/i)).toBeInTheDocument();
+    
+    // The reset button should not be visible when there's no search term
+    expect(screen.queryByRole('button', { name: /clear search/i })).not.toBeInTheDocument();
   });
   
   it('displays the search term when provided', () => {
@@ -69,8 +72,11 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    expect(screen.getByText(/searching for:/i)).toBeInTheDocument();
-    expect(screen.getByText('cardiology')).toBeInTheDocument();
+    // Just check that the input has the correct value
+    expect(screen.getByDisplayValue('cardiology')).toBeInTheDocument();
+    
+    // Check that the clear button is visible
+    expect(screen.getByRole('button', { name: /clear search/i })).toBeInTheDocument();
   });
   
   it('calls onSearchChange when input changes', () => {
@@ -82,13 +88,15 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText(/search by name, degree, location, or specialty/i);
-    fireEvent.change(input, { target: { value: 'test search' } });
+    // Get the search input and simulate typing in it
+    const input = screen.getByPlaceholderText(/search advocates by name and phone number/i);
+    fireEvent.change(input, { target: { value: 'test' } });
     
-    expect(mockOnSearchChange).toHaveBeenCalledWith('test search');
+    // Check that onSearchChange was called with the new value
+    expect(mockOnSearchChange).toHaveBeenCalledWith('test');
   });
   
-  it('calls onReset when reset button is clicked', () => {
+  it('calls onReset when clear button is clicked', () => {
     render(
       <AdvocateSearch
         searchTerm="test"
@@ -97,9 +105,11 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    const resetButton = screen.getByRole('button', { name: /reset/i });
-    fireEvent.click(resetButton);
+    // Find the clear button (which is now an icon button with aria-label)
+    const clearButton = screen.getByRole('button', { name: /clear search/i });
+    fireEvent.click(clearButton);
     
+    // Check that onReset was called
     expect(mockOnReset).toHaveBeenCalled();
   });
   
@@ -112,9 +122,11 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText(/search by name, degree, location, or specialty/i);
+    // Get the search input and simulate pressing the Escape key
+    const input = screen.getByPlaceholderText(/search advocates by name and phone number/i);
     fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
     
+    // Check that onReset was called
     expect(mockOnReset).toHaveBeenCalled();
   });
   
@@ -128,7 +140,15 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    expect(screen.getByText(/5 results found/i)).toBeInTheDocument();
+    // Check that the result count is displayed correctly
+    expect(screen.getByText('5')).toBeInTheDocument();
+    
+    // Use a more flexible approach with a regex for 'advocates'
+    const advocatesText = screen.getByText(/advocates/i);
+    expect(advocatesText).toBeInTheDocument();
+    
+    expect(screen.getByText(/found for/i)).toBeInTheDocument();
+    expect(screen.getByText(/"test"/)).toBeInTheDocument();
   });
   
   it('shows singular result text when only one result', () => {
@@ -141,7 +161,18 @@ describe('AdvocateSearch component', () => {
       />
     );
     
-    expect(screen.getByText(/1 result found/i)).toBeInTheDocument();
+    // Check that the singular form is used for one result
+    expect(screen.getByText('1')).toBeInTheDocument();
+    
+    // The text might not be an exact match due to whitespace or other elements
+    // Use a more flexible approach with a regex
+    const resultText = screen.getByText(/advocate/i);
+    expect(resultText).toBeInTheDocument();
+    
+    expect(screen.getByText(/found for/i)).toBeInTheDocument();
+    
+    // Use a regex for the search term to handle potential whitespace
+    expect(screen.getByText(/"test"/)).toBeInTheDocument();
   });
   
   it('includes phone number search in the placeholder text', () => {

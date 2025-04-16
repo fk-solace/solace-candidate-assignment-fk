@@ -39,97 +39,44 @@ export function AdvocateSearch({ searchTerm, onSearchChange, onReset, resultCoun
   };
 
   return (
-    <div className="advocate-search" style={{ 
-      marginBottom: '20px',
-      padding: '15px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-      <div className="search-header" style={{ marginBottom: '10px' }}>
-        <h2 style={{ margin: '0 0 10px 0', color: '#333' }}>Search Advocates</h2>
+    <div className="advocate-search mb-8">
+      <div className="relative max-w-3xl mx-auto">
+        {/* Search icon */}
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+          </svg>
+        </div>
+        
+        {/* Search input */}
+        <input
+          type="text"
+          placeholder="Search advocates by name and phone number..."
+          value={inputValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className="w-full pl-12 pr-12 py-4 bg-white border-0 rounded-full shadow-md text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          aria-label="Search advocates"
+        />
+        
+        {/* Clear button */}
         {isSearching && (
-          <div className="search-feedback" style={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            marginBottom: '10px',
-            color: '#555'
-          }}>
-            <p className="search-term" style={{ margin: 0 }}>
-              Searching for: <span style={{ fontWeight: 'bold' }}>{searchTerm}</span>
-            </p>
-            {resultCount !== undefined && (
-              <p style={{ margin: '0 0 0 15px', fontSize: '0.9em' }}>
-                {resultCount} {resultCount === 1 ? 'result' : 'results'} found
-              </p>
-            )}
-          </div>
+          <button 
+            onClick={onReset}
+            aria-label="Clear search"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer text-gray-400 hover:text-gray-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </button>
         )}
       </div>
       
-      <div className="search-controls" style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flexGrow: 1 }}>
-          <input
-            type="text"
-            placeholder="Search by name, phone, degree, location, or specialty..."
-            value={inputValue}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            className="search-input"
-            aria-label="Search advocates"
-            style={{ 
-              width: '100%',
-              padding: '10px 15px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '16px',
-              transition: 'border-color 0.2s'
-            }}
-          />
-          {isSearching && (
-            <button 
-              onClick={onReset}
-              aria-label="Clear search"
-              style={{ 
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '18px',
-                color: '#999'
-              }}
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <button 
-          onClick={onReset}
-          className="reset-button"
-          disabled={!isSearching}
-          style={{ 
-            marginLeft: '10px',
-            padding: '10px 15px',
-            backgroundColor: isSearching ? '#6c757d' : '#e9ecef',
-            color: isSearching ? 'white' : '#adb5bd',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isSearching ? 'pointer' : 'default',
-            transition: 'background-color 0.2s'
-          }}
-        >
-          Reset
-        </button>
-      </div>
-      
-      {isSearching && (
-        <div style={{ marginTop: '10px', fontSize: '0.85em', color: '#6c757d' }}>
-          <p style={{ margin: 0 }}>
-            Tip: Search across names, phone numbers, degrees, locations, and specialties. Press ESC to clear.
-          </p>
+      {/* Search results info */}
+      {isSearching && resultCount !== undefined && (
+        <div className="mt-3 text-center text-gray-500">
+          <span className="font-medium">{resultCount}</span> {resultCount === 1 ? 'advocate' : 'advocates'} found for <span className="font-medium">"{searchTerm}"</span>
         </div>
       )}
     </div>

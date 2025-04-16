@@ -25,36 +25,15 @@ export function AdvocateTable({
     onSortChange(field, newDirection);
   };
   
-  // Render sort indicator
+  // Render sort indicator with CSS classes instead of inline styles
   const renderSortIndicator = (field: string) => {
     if (sortField !== field) return null;
     
     return (
-      <span style={{ marginLeft: '4px' }}>
+      <span className="ml-1">
         {sortDirection === 'asc' ? '↑' : '↓'}
       </span>
     );
-  };
-  
-  // Style for sortable headers
-  const getSortableHeaderStyle = (field: string) => {
-    const baseStyle = { 
-      textAlign: 'left' as const, 
-      padding: '8px', 
-      borderBottom: '1px solid #ddd',
-      cursor: onSortChange ? 'pointer' : 'default'
-    };
-    
-    // Highlight the current sort field
-    if (sortField === field) {
-      return {
-        ...baseStyle,
-        backgroundColor: '#f5f5f5',
-        fontWeight: 'bold' as const
-      };
-    }
-    
-    return baseStyle;
   };
   
   // Define sortable columns
@@ -66,42 +45,64 @@ export function AdvocateTable({
   ];
   
   return (
-    <table className="advocate-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr>
-          {sortableColumns.map(column => (
-            <th 
-              key={column.field}
-              onClick={() => handleSortClick(column.field)}
-              style={getSortableHeaderStyle(column.field)}
-              aria-sort={sortField === column.field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
-            >
-              {column.label}
-              {renderSortIndicator(column.field)}
-            </th>
-          ))}
-          <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>City</th>
-          <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Specialties</th>
-          <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Phone Number</th>
-        </tr>
-      </thead>
-      <tbody>
-        {advocates.map((advocate: Advocate) => (
-          <tr key={advocate.id}>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.firstName}</td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.lastName}</td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.degree}</td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.yearsOfExperience}</td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.city}</td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>
-              {advocate.specialties.map((specialty, index) => (
-                <div key={`${advocate.id}-specialty-${index}`}>{specialty}</div>
-              ))}
-            </td>
-            <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{advocate.phoneNumber}</td>
+    <div className="overflow-x-auto">
+      <table className="advocate-table w-full">
+        <thead>
+          <tr>
+            {sortableColumns.map(column => {
+              // Determine if this column should be hidden on mobile
+              const isMobileHidden = column.field === 'yearsOfExperience';
+              const columnClass = isMobileHidden ? 'hide-on-mobile' : '';
+              
+              return (
+                <th 
+                  key={column.field}
+                  onClick={() => handleSortClick(column.field)}
+                  className={`text-left p-3 border-b-2 ${sortField === column.field ? 'bg-gray-50 font-bold' : ''} ${onSortChange ? 'cursor-pointer' : ''} ${columnClass}`}
+                  aria-sort={sortField === column.field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  {column.label}
+                  {renderSortIndicator(column.field)}
+                </th>
+              );
+            })}
+            <th className="text-left p-3 border-b-2">City</th>
+            <th className="text-left p-3 border-b-2 hide-on-mobile">Specialties</th>
+            <th className="text-left p-3 border-b-2">Phone</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {advocates.map((advocate: Advocate) => (
+            <tr key={advocate.id} className="hover:bg-gray-50 transition-colors">
+              <td className="p-3 border-b">{advocate.firstName}</td>
+              <td className="p-3 border-b">{advocate.lastName}</td>
+              <td className="p-3 border-b">{advocate.degree}</td>
+              <td className="p-3 border-b hide-on-mobile">{advocate.yearsOfExperience}</td>
+              <td className="p-3 border-b">{advocate.city}</td>
+              <td className="p-3 border-b hide-on-mobile">
+                <div className="flex flex-wrap gap-1">
+                  {advocate.specialties.map((specialty, index) => (
+                    <span 
+                      key={`${advocate.id}-specialty-${index}`}
+                      className="inline-block bg-gray-100 text-xs px-2 py-1 rounded-full"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
+                </div>
+              </td>
+              <td className="p-3 border-b">
+                <a 
+                  href={`tel:${advocate.phoneNumber.toString().replace(/[^0-9]/g, '')}`}
+                  className="text-primary hover:underline"
+                >
+                  {advocate.phoneNumber}
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

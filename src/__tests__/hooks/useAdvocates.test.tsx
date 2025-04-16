@@ -1,7 +1,7 @@
 /**
  * Tests for useAdvocates hook
  */
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAdvocates } from '../../hooks/useAdvocates';
 import { advocateService } from '../../api';
 
@@ -64,22 +64,58 @@ describe('useAdvocates hook', () => {
   });
 
   it('should initialize with default values', async () => {
-    // Arrange
-    const { result, rerender } = renderHook(() => useAdvocates());
+    // Define the mock data to be returned
+    const mockData = [
+      {
+        id: '1',
+        firstName: 'John',
+        lastName: 'Doe',
+        degree: 'MD',
+        yearsOfExperience: 10,
+        phoneNumber: 1234567890,
+        city: 'New York',
+        country: 'USA',
+        specialties: ['Cardiology'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    ];
     
-    // Initial state should have default values
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.error).toBeNull();
+    const mockPaginationData = {
+      totalCount: 1,
+      pageSize: 10,
+      currentPage: 1,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    };
     
-    // Act - wait for the initial fetch to complete
-    await act(async () => {
-      // Force re-render to update state
-      rerender();
+    // Mock the API response for initial load
+    (advocateService.getAdvocates as jest.Mock).mockResolvedValue({
+      data: mockData,
+      pagination: mockPaginationData,
     });
     
-    // Assert - after fetch, should have data
-    expect(advocateService.getAdvocates).toHaveBeenCalled();
-  }, 10000);
+    // Render the hook without any options to test defaults
+    const { result } = renderHook(() => useAdvocates());
+    
+    // Initial state should show loading
+    expect(result.current.isLoading).toBe(true);
+    
+    // Wait for the initial fetch to complete
+    await waitFor(() => {
+      return result.current.isLoading === false;
+    });
+    
+    // Assert default values
+    expect(result.current.advocates).toEqual(mockData);
+    expect(result.current.pagination).toEqual(mockPaginationData);
+    expect(result.current.searchTerm).toBe('');
+    expect(result.current.sortParams.sort).toBe('createdAt');
+    expect(result.current.sortParams.order).toBe('desc');
+    expect(result.current.useCursorPagination).toBe(false);
+    expect(result.current.error).toBe(null);
+  });
 
   it('should handle sort changes and update URL', async () => {
     // Arrange
